@@ -3,7 +3,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { listen } from "@tauri-apps/api/event";
 import { druplOcean } from "../themes/druplOcean";
 import { langForFilename, languageLabel } from "../lib/language";
-import { TerminalPanel } from "../components/TerminalPanel";
+import { TerminalDock } from "../components/TerminalDock";
 import { PluginsPanel } from "../components/PluginsPanel";
 import { CommandPalette, type Command } from "../components/CommandPalette";
 import { MiniDroplet } from "../components/MiniDroplet";
@@ -775,12 +775,35 @@ export function EditorScreen({
           </div>
 
           {terminalOpen && (
-            <TerminalPanel
+            <TerminalDock
               cwd={initialFolder?.path}
               onClose={() => setTerminalOpen(false)}
             />
           )}
         </div>
+
+        <footer className="editor-statusbar">
+          <span className="status-path" title={active?.path ?? undefined}>
+            {active ? active.path ?? `${active.name} · new file` : "no file open"}
+          </span>
+          <span className="status-spacer" />
+          {tsInfo && (
+            <span className="status-chip">
+              {tsInfo.symbols.length} symbols · {tsInfo.nodeCount} nodes
+            </span>
+          )}
+          {active && (
+            <span
+              className={`status-save ${activeIsDirty ? "dirty" : "clean"}`}
+            >
+              {activeIsDirty
+                ? "● unsaved changes"
+                : active.path
+                  ? "✓ saved"
+                  : "✓ no changes"}
+            </span>
+          )}
+        </footer>
       </main>
 
       {pluginsOpen && (

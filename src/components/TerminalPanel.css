@@ -1,61 +1,9 @@
-.terminal-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--bg);
-  border-top: 1px solid #10183a;
-  min-height: 0;
-}
-
-.terminal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: #060a18;
-  border-bottom: 1px solid #10183a;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
-
-.terminal-title {
-  color: var(--water);
-}
-
-.terminal-status {
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--fg-dim);
-}
-
-.terminal-spacer {
-  flex: 1;
-}
-
-.terminal-close {
-  background: transparent;
-  border: none;
-  color: var(--fg-dim);
-  font-size: 14px;
-  line-height: 1;
-  padding: 2px 8px;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-.terminal-close:hover {
-  background: rgba(255, 155, 179, 0.15);
-  color: var(--pink);
-}
-
 .terminal-surface {
-  flex: 1;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
   padding: 8px 0 0 8px;
   overflow: hidden;
+  background: var(--bg);
 }
 
 .terminal-surface .xterm {

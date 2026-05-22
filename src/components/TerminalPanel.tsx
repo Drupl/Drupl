@@ -9,7 +9,7 @@ import "./TerminalPanel.css";
 
 type Props = {
   cwd?: string;
-  onClose: () => void;
+  visible: boolean;
 };
 
 type PtyDataEvent = { session_id: string; data: number[] };
@@ -44,17 +44,15 @@ function diag(term: Terminal, msg: string, color: "dim" | "err" | "ok" = "dim") 
   term.writeln(`\x1b[${code}m[drupl] ${msg}\x1b[0m`);
 }
 
-export function TerminalPanel({ cwd, onClose }: Props) {
+export function TerminalPanel({ cwd, visible }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const disposedRef = useRef(false);
-  const [status, setStatus] = useState<string>("starting…");
 
   useEffect(() => {
     if (!containerRef.current) return;
-    // reset refs in case a prior effect run left them populated (HMR / strict)
     disposedRef.current = false;
     sessionIdRef.current = null;
 
@@ -83,19 +81,13 @@ export function TerminalPanel({ cwd, onClose }: Props) {
 
     diag(term, "starting pty…");
 
-    // Bind input handlers EARLY so keypresses are at least logged/forwarded
-    // as soon as a session is available. If session isn't ready, surface that.
     term.onData((data) => {
-      if (!sessionIdRef.current) {
-        diag(term, `(no session yet — keypress dropped: ${JSON.stringify(data)})`, "err");
-        return;
-      }
+      if (!sessionIdRef.current) return;
       invoke("pty_write", {
         session_id: sessionIdRef.current,
         data,
       }).catch((err) => {
         diag(term, `pty_write failed: ${String(err)}`, "err");
-        console.error("pty_write failed:", err);
       });
     });
 
@@ -105,10 +97,7 @@ export function TerminalPanel({ cwd, onClose }: Props) {
         session_id: sessionIdRef.current,
         cols,
         rows,
-      }).catch((err) => {
-        diag(term, `pty_resize failed: ${String(err)}`, "err");
-        console.error("pty_resize failed:", err);
-      });
+      }).catch(() => {});
     });
 
     let unlistenData: UnlistenFn | null = null;
@@ -118,7 +107,6 @@ export function TerminalPanel({ cwd, onClose }: Props) {
     (async () => {
       try {
         unlistenData = await listen<PtyDataEvent>("pty-data", (event) => {
-          // Buffer events that arrive before we know our own session_id
           if (sessionIdRef.current === null) {
             buffered.push(event.payload);
             return;
@@ -129,13 +117,10 @@ export function TerminalPanel({ cwd, onClose }: Props) {
         unlistenExit = await listen<PtyExitEvent>("pty-exit", (event) => {
           if (event.payload.session_id !== sessionIdRef.current) return;
           diag(term, "shell exited");
-          setStatus("exited");
           sessionIdRef.current = null;
         });
-        diag(term, "listeners attached");
       } catch (err) {
         diag(term, `could not attach listeners: ${String(err)}`, "err");
-        setStatus("listener error");
         return;
       }
 
@@ -145,29 +130,14 @@ export function TerminalPanel({ cwd, onClose }: Props) {
           ? crypto.randomUUID()
           : `sid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       sessionIdRef.current = sessionId;
-      setStatus(`session ${sessionId.slice(0, 8)}`);
-      diag(term, `session ${sessionId.slice(0, 8)}`, "ok");
-      diag(term, `pty_spawn(cwd=${cwd ?? "$HOME"}, ${cols}x${rows})…`);
 
-      invoke("pty_spawn", {
-        session_id: sessionId,
-        cwd,
-        cols,
-        rows,
-      })
-        .then(() => {
-          if (disposedRef.current) {
-            void invoke("pty_kill", { session_id: sessionId });
-          }
-        })
-        .catch((err) => {
+      invoke("pty_spawn", { session_id: sessionId, cwd, cols, rows }).catch(
+        (err) => {
           diag(term, `pty_spawn failed: ${String(err)}`, "err");
-          console.error("pty_spawn failed:", err);
-          setStatus("spawn error");
           sessionIdRef.current = null;
-        });
+        },
+      );
 
-      // Drain any data that arrived between listener attach and now
       for (const item of buffered) {
         if (item.session_id === sessionId) {
           term.write(new Uint8Array(item.data));
@@ -203,17 +173,25 @@ export function TerminalPanel({ cwd, onClose }: Props) {
     };
   }, [cwd]);
 
+  // Refit + focus when this terminal becomes visible
+  useEffect(() => {
+    if (!visible) return;
+    const id = window.setTimeout(() => {
+      try {
+        fitRef.current?.fit();
+        termRef.current?.focus();
+      } catch {
+        // ignore
+      }
+    }, 30);
+    return () => window.clearTimeout(id);
+  }, [visible]);
+
   return (
-    <div className="terminal-panel">
-      <div className="terminal-header">
-        <span className="terminal-title">▸ terminal</span>
-        <span className="terminal-status">{status}</span>
-        <div className="terminal-spacer" />
-        <button className="terminal-close" onClick={onClose} title="Close terminal">
-          ×
-        </button>
-      </div>
-      <div ref={containerRef} className="terminal-surface" />
-    </div>
+    <div
+      ref={containerRef}
+      className="terminal-surface"
+      style={{ display: visible ? "block" : "none" }}
+    />
   );
 }

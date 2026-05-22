@@ -1,0 +1,95 @@
+.terminal-dock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+  border-top: 1px solid #10183a;
+}
+
+.terminal-dock-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 8px;
+  background: #060a18;
+  border-bottom: 1px solid #10183a;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.terminal-tab:hover {
+  color: var(--fg-muted);
+}
+
+.terminal-tab.active {
+  color: var(--water);
+  box-shadow: inset 0 -2px 0 var(--water);
+}
+
+.terminal-tab-close {
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 3px;
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+.terminal-tab-close:hover {
+  opacity: 1;
+  background: rgba(255, 155, 179, 0.18);
+  color: var(--pink);
+}
+
+.terminal-dock-add {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.terminal-dock-add:hover {
+  color: var(--water);
+}
+
+.terminal-dock-spacer {
+  flex: 1;
+}
+
+.terminal-dock-close {
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 8px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.terminal-dock-close:hover {
+  background: rgba(255, 155, 179, 0.15);
+  color: var(--pink);
+}
+
+.terminal-dock-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
