@@ -8,6 +8,7 @@ import { PluginsPanel } from "../components/PluginsPanel";
 import { CommandPalette, type Command } from "../components/CommandPalette";
 import { MiniDroplet } from "../components/MiniDroplet";
 import { TINTS } from "../components/Mascot";
+import { useContextMenu, type ContextMenuItem } from "../components/ContextMenu";
 import { useRipple } from "../lib/ripple";
 import { useTreeSitter } from "../lib/useTreeSitter";
 import { EditorView } from "@codemirror/view";
@@ -196,6 +197,7 @@ export function EditorScreen({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [childrenMap, setChildrenMap] = useState<Record<string, FolderEntry[]>>({});
   const { drop: dropRipple } = useRipple();
+  const { show: showContextMenu } = useContextMenu();
 
   function rippleFromEvent(
     e: React.MouseEvent | undefined,
@@ -259,8 +261,15 @@ export function EditorScreen({
 
   useEffect(() => {
     const u = listen<string>("menu", (event) => {
+      handleMenuPayload(event.payload);
+    });
+    function onWinMenu(e: Event) {
+      const ce = e as CustomEvent<string>;
+      handleMenuPayload(ce.detail);
+    }
+    function handleMenuPayload(payload: string) {
       const h = menuHandlersRef.current;
-      switch (event.payload) {
+      switch (payload) {
         case "save":
           if (h) void h.save();
           break;
@@ -277,9 +286,11 @@ export function EditorScreen({
           if (h) h.splitRight();
           break;
       }
-    });
+    }
+    window.addEventListener("drupl:menu", onWinMenu);
     return () => {
       u.then((f) => f());
+      window.removeEventListener("drupl:menu", onWinMenu);
     };
   }, []);
 
@@ -480,6 +491,104 @@ export function EditorScreen({
     }
   }
 
+  function closeTabByIdx(idx: number) {
+    setBuffers((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      setPanes((prevPanes) =>
+        prevPanes.map((p) => {
+          if (p.activeIdx === idx) {
+            return { activeIdx: next.length === 0 ? -1 : Math.max(0, idx - 1) };
+          } else if (p.activeIdx > idx) {
+            return { activeIdx: p.activeIdx - 1 };
+          }
+          return p;
+        }),
+      );
+      return next;
+    });
+  }
+
+  function closeOthers(keepIdx: number) {
+    setBuffers((prev) => {
+      const keep = prev[keepIdx];
+      if (!keep) return prev;
+      const next = [keep];
+      setPanes((prevPanes) => prevPanes.map(() => ({ activeIdx: 0 })));
+      return next;
+    });
+  }
+
+  function closeAllTabs() {
+    setBuffers([]);
+    setPanes((prevPanes) => prevPanes.map(() => ({ activeIdx: -1 })));
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error("clipboard write failed:", err);
+    }
+  }
+
+  function tabContextItems(idx: number): ContextMenuItem[] {
+    const buf = buffers[idx];
+    const hasOthers = buffers.length > 1;
+    return [
+      {
+        label: "Close",
+        hint: "⌘W",
+        onSelect: () => closeTabByIdx(idx),
+      },
+      {
+        label: "Close Others",
+        disabled: !hasOthers,
+        onSelect: () => closeOthers(idx),
+      },
+      {
+        label: "Close All",
+        disabled: buffers.length === 0,
+        danger: true,
+        onSelect: closeAllTabs,
+      },
+      { type: "separator" },
+      {
+        label: "Copy Path",
+        disabled: !buf?.path,
+        onSelect: () => buf?.path && void copyToClipboard(buf.path),
+      },
+      {
+        label: "Copy File Name",
+        disabled: !buf,
+        onSelect: () => buf && void copyToClipboard(buf.name),
+      },
+      { type: "separator" },
+      {
+        label: panes.length >= 2 ? "Close Split" : "Split Right",
+        hint: "⌘\\",
+        onSelect: () => (panes.length >= 2 ? closePane(1) : splitRight()),
+      },
+    ];
+  }
+
+  function treeContextItems(entry: FolderEntry): ContextMenuItem[] {
+    return [
+      {
+        label: entry.isDir ? (expanded.has(entry.path) ? "Collapse" : "Expand") : "Open",
+        onSelect: () => void openFromFolder(entry),
+      },
+      { type: "separator" },
+      {
+        label: "Copy Path",
+        onSelect: () => void copyToClipboard(entry.path),
+      },
+      {
+        label: "Copy Name",
+        onSelect: () => void copyToClipboard(entry.name),
+      },
+    ];
+  }
+
   function closeTab(idx: number, e: React.MouseEvent) {
     e.stopPropagation();
     setBuffers((prev) => {
@@ -524,6 +633,7 @@ export function EditorScreen({
                     key={entry.path}
                     className={`tree-file ${active?.path === entry.path ? "active" : ""} ${entry.isDir ? "is-dir" : ""}`}
                     onClick={() => openFromFolder(entry)}
+                    onContextMenu={(e) => showContextMenu(e, treeContextItems(entry))}
                     title={entry.path}
                     style={{ paddingLeft: 10 + depth * 12 }}
                   >
@@ -656,6 +766,7 @@ export function EditorScreen({
                   if (activeIdx !== i) rippleFromEvent(e, undefined, "var(--water)");
                   setActiveOfFocused(i);
                 }}
+                onContextMenu={(e) => showContextMenu(e, tabContextItems(i))}
                 title={f.path ?? f.name}
               >
                 {dirty && <span className="editor-tab-dirty">●</span>}

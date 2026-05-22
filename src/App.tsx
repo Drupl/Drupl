@@ -10,6 +10,7 @@ import "./styles/tokens.css";
 import { WelcomeScreen } from "./views/WelcomeScreen";
 import { EditorScreen } from "./views/EditorScreen";
 import { RippleProvider } from "./lib/ripple";
+import { ContextMenuProvider, type ContextMenuItem } from "./components/ContextMenu";
 
 type View = "welcome" | "editor";
 
@@ -251,8 +252,52 @@ function App() {
     return entries;
   }
 
+  const defaultContextItems = (): ContextMenuItem[] => {
+    const inEditor = view === "editor";
+    return [
+      {
+        label: "Command Palette…",
+        hint: "⌘K",
+        disabled: !inEditor,
+        onSelect: () => {
+          window.dispatchEvent(new CustomEvent("drupl:menu", { detail: "command_palette" }));
+        },
+      },
+      { type: "separator" },
+      {
+        label: "New File",
+        hint: "⌘N",
+        onSelect: handleNewFile,
+      },
+      {
+        label: "New Project",
+        hint: "⌘⇧N",
+        onSelect: handleNewProject,
+      },
+      {
+        label: "Open File…",
+        hint: "⌘O",
+        onSelect: () => void handleOpenFile(),
+      },
+      {
+        label: "Open Folder…",
+        hint: "⌘⇧O",
+        onSelect: () => void handleOpenFolder(),
+      },
+      { type: "separator" },
+      {
+        label: inEditor ? "Back to Welcome" : "Reload Window",
+        onSelect: () => {
+          if (inEditor) setView("welcome");
+          else window.location.reload();
+        },
+      },
+    ];
+  };
+
   return (
     <RippleProvider>
+     <ContextMenuProvider defaultItems={defaultContextItems}>
       {view === "welcome" ? (
         <WelcomeScreen
           onNewProject={handleNewProject}
@@ -277,6 +322,7 @@ function App() {
           onConsumedDropped={() => setDroppedFiles([])}
         />
       )}
+     </ContextMenuProvider>
     </RippleProvider>
   );
 }
