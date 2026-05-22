@@ -2,10 +2,12 @@ import { Mascot } from "../components/Mascot";
 import "./WelcomeScreen.css";
 
 type Props = {
-  onLaunch: () => void;
+  onNewProject: () => void;
+  onOpenFolder: () => void;
+  onOpenFile: () => void;
 };
 
-export function WelcomeScreen({ onLaunch }: Props) {
+export function WelcomeScreen({ onNewProject, onOpenFolder, onOpenFile }: Props) {
   return (
     <main className="welcome">
       <div className="welcome-card">
@@ -14,9 +16,19 @@ export function WelcomeScreen({ onLaunch }: Props) {
         </div>
         <h1 className="welcome-title">Drupl</h1>
         <p className="welcome-tagline">the open-source code editor that ripples</p>
-        <button className="welcome-launch" onClick={onLaunch}>
-          ▶ launch editor
-        </button>
+
+        <div className="welcome-actions">
+          <button className="welcome-btn primary" onClick={onNewProject}>
+            ▶ new project
+          </button>
+          <button className="welcome-btn" onClick={onOpenFolder}>
+            ▸ open folder…
+          </button>
+          <button className="welcome-btn" onClick={onOpenFile}>
+            ▸ open file…
+          </button>
+        </div>
+
         <div className="welcome-version">v0.1 · dev</div>
       </div>
     </main>

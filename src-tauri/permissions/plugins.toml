@@ -1,0 +1,6 @@
+"$schema" = "schemas/schema.json"
+
+[[permission]]
+identifier = "allow-plugins"
+description = "Allow loading and running Drupl WASM plugins."
+commands.allow = ["plugin_list", "plugin_load", "plugin_unload", "plugin_transform"]

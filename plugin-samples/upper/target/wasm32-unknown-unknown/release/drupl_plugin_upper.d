@@ -1,0 +1,1 @@
+/Users/sacha/Documents/Development/drupl-app/plugin-samples/upper/target/wasm32-unknown-unknown/release/drupl_plugin_upper.wasm: /Users/sacha/Documents/Development/drupl-app/plugin-samples/upper/src/lib.rs

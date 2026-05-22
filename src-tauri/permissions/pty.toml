@@ -1,0 +1,6 @@
+"$schema" = "schemas/schema.json"
+
+[[permission]]
+identifier = "allow-pty"
+description = "Allow spawning and controlling a pty-backed terminal session."
+commands.allow = ["pty_spawn", "pty_write", "pty_resize", "pty_kill"]

@@ -37,28 +37,47 @@
   font-size: 14px;
 }
 
-.welcome-launch {
-  margin-top: 16px;
-  padding: 12px 28px;
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+  max-width: 480px;
+}
+
+.welcome-btn {
+  padding: 12px 24px;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--bg);
-  background: var(--water);
+  letter-spacing: 1px;
+  color: var(--fg);
+  background: transparent;
   border: 2px solid var(--water-dk);
   border-radius: 0;
   box-shadow: 4px 4px 0 var(--water-dp);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
 }
 
-.welcome-launch:hover {
+.welcome-btn:hover {
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--water-dp);
 }
 
-.welcome-launch:active {
+.welcome-btn:active {
   transform: translate(2px, 2px);
   box-shadow: 0 0 0 var(--water-dp);
+}
+
+.welcome-btn.primary {
+  color: var(--bg);
+  background: var(--water);
+  border-color: var(--water-dk);
+}
+
+.welcome-btn:not(.primary):hover {
+  background: rgba(92, 201, 255, 0.08);
 }
 
 .welcome-version {
